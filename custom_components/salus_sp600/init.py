@@ -39,12 +39,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         app = await zigpy.application.ControllerApplication.new(app_config)
         await app.startup()
         hass.data["salus_sp600"][entry.entry_id] = {"zigbee_app": app}
+        # 啟動設備掃描
+        await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
     except Exception as err:
         raise ConfigEntryNotReady(f"連繫唔到 Zigbee 端口 {zigbee_port}：{err}")
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """卸載整合."""
+    await hass.config_entries.async_unload_platforms(entry, ["switch"])
     app = hass.data["salus_sp600"][entry.entry_id]["zigbee_app"]
     await app.shutdown()
     hass.data["salus_sp600"].pop(entry.entry_id)
