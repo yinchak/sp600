@@ -38,10 +38,10 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
                 errors["base"] = f"無法連繫 Zigbee 端口：{err}"
             except asyncio.TimeoutError:
                 _LOGGER.error("連繫 Zigbee 端口超時")
-                errors["base"] = "連繫 Zigbee 端口超時"
+                errors["base"] = "連繫 Zigbee 端口超時，請檢查 USB 棒"
             except PermissionError:
                 _LOGGER.error(f"無權限訪問 Zigbee 端口：{zigbee_port}")
-                errors["base"] = "無權限訪問 Zigbee 端口，請檢查 USB 權限"
+                errors["base"] = "無權限訪問 Zigbee 端口，請執行 'sudo chmod 666 /dev/ttyACM0'"
             except Exception as err:
                 _LOGGER.error(f"未知錯誤：{err}")
                 errors["base"] = f"設定失敗：{err}"
@@ -54,6 +54,7 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             }),
             errors=errors,
             description_placeholders={
-                "example_ports": "例如：/dev/ttyACM0, /dev/ttyUSB0, 或 Windows 的 COM3"
+                "example_ports": "例如：/dev/ttyACM0, /dev/ttyUSB0, 或 Windows 的 COM3",
+                "permission_tip": "如果報錯，試喺終端機執行：sudo chmod 666 /dev/ttyACM0"
             }
         )
