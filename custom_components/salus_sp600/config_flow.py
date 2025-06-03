@@ -17,13 +17,14 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
 
     async def async_step_user(self, user_input=None):
         """處理初始設定步驟."""
+        _LOGGER.debug("開始 Salus SP600 設定流程")
         errors = {}
 
         if user_input is not None:
             zigbee_port = user_input["zigbee_port"]
+            _LOGGER.debug(f"用戶輸入 Zigbee 端口：{zigbee_port}")
             try:
                 # 測試 Zigbee 端口連繫
-                _LOGGER.debug(f"試連 Zigbee 端口：{zigbee_port}")
                 app_config = zigpy.config.SCHEMA({"device": {"path": zigbee_port}})
                 app = await zigpy.application.ControllerApplication.new(app_config)
                 await app.startup()
@@ -46,7 +47,8 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
                 _LOGGER.error(f"未知錯誤：{err}")
                 errors["base"] = f"設定失敗：{err}"
 
-        # 顯示輸入表單，預設端口為 /dev/ttyACM0
+        # 顯示輸入表單
+        _LOGGER.debug("顯示 Zigbee 端口輸入表單")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
