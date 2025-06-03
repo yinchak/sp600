@@ -39,18 +39,21 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             except asyncio.TimeoutError:
                 _LOGGER.error("連繫 Zigbee 端口超時")
                 errors["base"] = "連繫 Zigbee 端口超時"
+            except PermissionError:
+                _LOGGER.error(f"無權限訪問 Zigbee 端口：{zigbee_port}")
+                errors["base"] = "無權限訪問 Zigbee 端口，請檢查 USB 權限"
             except Exception as err:
                 _LOGGER.error(f"未知錯誤：{err}")
                 errors["base"] = f"設定失敗：{err}"
 
-        # 顯示輸入表單
+        # 顯示輸入表單，預設端口為 /dev/ttyACM0
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Required("zigbee_port", default="/dev/ttyUSB0"): str,
+                vol.Required("zigbee_port", default="/dev/ttyACM0"): str,
             }),
             errors=errors,
             description_placeholders={
-                "example_ports": "例如：/dev/ttyUSB0, /dev/ttyACM0, 或 Windows 的 COM3"
+                "example_ports": "例如：/dev/ttyACM0, /dev/ttyUSB0, 或 Windows 的 COM3"
             }
         )
