@@ -12,7 +12,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     """設置開關平台."""
     _LOGGER.debug("設置 Salus SP600 開關平台")
     app = hass.data["salus_sp600"][entry.entry_id]["zigbee_app"]
-    devices = [device for device in app.devices.values() if device.get(0x0006)]  # OnOff 集群
+    _
+
+devices = [device for device in app.devices.values() if device.get(0x0006)]  # OnOff 集群
     entities = [SalusSP600Switch(device) for device in devices]
     async_add_entities(entities)
     _LOGGER.info(f"發現 {len(entities)} 個 Salus SP600 設備")
