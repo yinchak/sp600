@@ -1,7 +1,7 @@
 {
     "domain": "salus_sp600",
     "name": "Salus SP600 Smart Plug",
-    "documentation": "https://github.com/yourusername/homeassistant_salus_sp600",
+    "documentation": "https://github.com/yinchak/sp600",
     "dependencies": ["zha"],
     "codeowners": ["@yourusername"],
     "requirements": ["bellows>=0.36.0", "zigpy>=0.63.0"],
