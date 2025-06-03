@@ -9,26 +9,10 @@ import zigpy.config
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """從 configuration.yaml 設置整合."""
+    """整合設置（無 YAML 支援）."""
     _LOGGER.debug("開始 Salus SP600 整合設置")
-    if "salus_sp600" not in config:
-        return True
-
-    zigbee_port = config["salus_sp600"].get("zigbee_port")
-    if not zigbee_port:
-        _LOGGER.error("未提供 Zigbee 端口")
-        return False
-
-    try:
-        app_config = zigpy.config.SCHEMA({"device": {"path": zigbee_port}})
-        app = await zigpy.application.ControllerApplication.new(app_config)
-        await app.startup()
-        hass.data.setdefault("salus_sp600", {})["zigbee_app"] = app
-        _LOGGER.info(f"Zigbee 端口 {zigbee_port} 連繫成功")
-    except Exception as err:
-        _LOGGER.error(f"無法連繫 Zigbee 端口 {zigbee_port}：{err}")
-        return False
-
+    if "salus_sp600" in config:
+        _LOGGER.warning("Salus SP600 不支援 YAML 配置，請用 UI 設定")
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
