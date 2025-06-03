@@ -13,6 +13,7 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
     """處理 Salus SP600 嘅設定流程."""
 
     VERSION = 1
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def async_step_user(self, user_input=None):
         """處理初始設定步驟."""
