@@ -10,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """從 configuration.yaml 設置整合."""
+    _LOGGER.debug("開始 Salus SP600 整合設置")
     if "salus_sp600" not in config:
         return True
 
@@ -32,6 +33,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """從 UI config flow 設置整合."""
+    _LOGGER.debug(f"從 config entry 設置 Salus SP600，端口：{entry.data.get('zigbee_port')}")
     hass.data.setdefault("salus_sp600", {})
     zigbee_port = entry.data.get("zigbee_port")
     try:
@@ -39,14 +41,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         app = await zigpy.application.ControllerApplication.new(app_config)
         await app.startup()
         hass.data["salus_sp600"][entry.entry_id] = {"zigbee_app": app}
-        # 啟動設備掃描
         await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
+        _LOGGER.info(f"Salus SP600 整合設置成功，端口：{zigbee_port}")
     except Exception as err:
+        _LOGGER.error(f"連繫唔到 Zigbee 端口 {zigbee_port}：{err}")
         raise ConfigEntryNotReady(f"連繫唔到 Zigbee 端口 {zigbee_port}：{err}")
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """卸載整合."""
+    _LOGGER.debug(f"卸載 Salus SP600 整合，entry ID：{entry.entry_id}")
     await hass.config_entries.async_unload_platforms(entry, ["switch"])
     app = hass.data["salus_sp600"][entry.entry_id]["zigbee_app"]
     await app.shutdown()
