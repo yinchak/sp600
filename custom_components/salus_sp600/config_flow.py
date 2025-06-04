@@ -3,8 +3,6 @@ import logging
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
-import zigpy
-import zigpy.config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,16 +21,10 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             zigbee_port = user_input["zigbee_port"]
             _LOGGER.debug(f"用戶輸入 Zigbee 端口：{zigbee_port}")
             try:
-                # 驗證端口格式
+                # 簡單驗證端口格式
                 if not zigbee_port.startswith(("/dev/", "COM")):
                     raise ValueError("端口格式無效，應為 /dev/ttyACM0 或 COM3")
-                
-                # 測試 Zigbee 端口連繫
-                app_config = zigpy.config.SCHEMA({"device": {"path": zigbee_port}})
-                app = await zigpy.application.ControllerApplication.new(app_config)
-                await app.startup()
-                await app.shutdown()
-                _LOGGER.info(f"Zigbee 端口 {zigbee_port} 連繫成功")
+                # 儲存配置（假設 ZHA 已處理 Zigbee 連繫）
                 return self.async_create_entry(
                     title=f"Salus SP600 (Zigbee {zigbee_port})",
                     data={"zigbee_port": zigbee_port}
@@ -40,12 +32,6 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             except ValueError as err:
                 _LOGGER.error(f"端口格式錯誤：{err}")
                 errors["base"] = str(err)
-            except zigpy.exceptions.ControllerException as err:
-                _LOGGER.error(f"Zigbee 控制器錯誤：{err}")
-                errors["base"] = f"無法連繫 Zigbee 端口：{err}"
-            except PermissionError:
-                _LOGGER.error(f"無權限訪問 {zigbee_port}")
-                errors["base"] = "無權限訪問端口，請執行 'sudo chmod 666 /dev/ttyACM0'"
             except Exception as err:
                 _LOGGER.error(f"設定失敗：{err}")
                 errors["base"] = f"設定失敗：{err}"
