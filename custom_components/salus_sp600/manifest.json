@@ -4,7 +4,8 @@
     "documentation": "https://github.com/yinchak/sp600",
     "dependencies": ["zha"],
     "codeowners": ["yinchak"],
-    "requirements": ["bellows>=0.36.0", "zigpy>=0.63.0"],
+    "requirements": [],
     "version": "0.1.0",
-    "iot_class": "local_polling"
+    "iot_class": "local_polling",
+    "config_flow": true
 }
