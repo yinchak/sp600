@@ -1,9 +1,9 @@
 """Config flow for Salus SP600 Smart Plug integration."""
 import logging
 import voluptuous as vol
-import zigpy_znp
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
+from .zigbee import test_zigbee_connection
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,9 +25,8 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
                 # Validate port format
                 if not zigbee_port.startswith(("/dev/", "COM")):
                     raise ValueError("Invalid port format. Expected /dev/ttyACM0 or COM3")
-                # Test connection to Zigbee USB
-                async with zigpy_znp.ZNP({"device": {"path": zigbee_port}}) as znp:
-                    await znp.connect()
+                # Test Zigbee connection
+                await test_zigbee_connection(zigbee_port)
                 return self.async_create_entry(
                     title=f"Salus SP600 ({zigbee_port})",
                     data={"zigbee_port": zigbee_port}
