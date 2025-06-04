@@ -2,50 +2,51 @@
 import logging
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.components.zha import ZhaDevice
-from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant, callback
+from zigpy.zcl.clusters.general import OnOff
+from zigpy.zcl.clusters.measurement import Metering
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the switch platform."""
     _LOGGER.debug("Setting up Salus SP600 switch platform")
-    zha_devices = hass.data.get("zha", {}).get("devices", {})
+    coordinator = hass.data["salus_sp600"][entry.entry_id]
     entities = []
-    for device in zha_devices.values():
-        if device.available and any(
-            ep for ep in device.device.cluster_by_endpoint.values()
-            if 0x0006 in ep.in_clusters  # OnOff cluster
-        ):
+
+    @callback
+    def device_discovered(event_data):
+        """Handle new SP600 device discovery."""
+        ieee = event_data["ieee"]
+        device = coordinator.devices.get(ieee)
+        if device:
             entities.append(SalusSP600Switch(hass, device, entry))
-    if entities:
-        async_add_entities(entities)
-        _LOGGER.info("Discovered %d Salus SP600 devices", len(entities))
-    else:
-        _LOGGER.warning("No Salus SP600 devices found with OnOff cluster")
+            async_add_entities(entities)
+            _LOGGER.info("Added Salus SP600 switch for device: %s", ieee)
+
+    hass.bus.async_listen("salus_sp600_device_discovered", device_discovered)
 
 class SalusSP600Switch(SwitchEntity):
     """Salus SP600 switch entity."""
 
-    def __init__(self, hass: HomeAssistant, zha_device: ZhaDevice, entry: ConfigEntry):
+    def __init__(self, hass: HomeAssistant, device, entry: ConfigEntry):
         """Initialize the Salus SP600 switch."""
         self._hass = hass
-        self._zha_device = zha_device
+        self._device = device
         self._entry = entry
-        self._attr_name = f"Salus SP600 {zha_device.ieee[-4:]}"
-        self._attr_unique_id = f"salus_sp600_switch_{zha_device.ieee}"
-        self._attr_device_info = zha_device.device_info
-        self._state = None
+        self._attr_name = f"Salus SP600 {device.ieee[-4:]}"
+        self._attr_unique_id = f"salus_sp600_switch_{device.ieee}"
+        self._state = False
         self._power = None
-        # Find OnOff and Metering clusters
         self._on_off_cluster = None
         self._metering_cluster = None
-        for endpoint in zha_device.device.cluster_by_endpoint.values():
-            if 0x0006 in endpoint.in_clusters:  # OnOff
-                self._on_off_cluster = endpoint.in_clusters[0x0006]
-            if 0x0B04 in endpoint.in_clusters:  # Metering
-                self._metering_cluster = endpoint.in_clusters[0x0B04]
+
+        # Find OnOff and Metering clusters
+        for endpoint in device.endpoints.values():
+            if OnOff.cluster_id in endpoint.in_clusters:
+                self._on_off_cluster = endpoint.in_clusters[OnOff.cluster_id]
+            if Metering.cluster_id in endpoint.in_clusters:
+                self._metering_cluster = endpoint.in_clusters[Metering.cluster_id]
 
     @property
     def is_on(self):
@@ -55,13 +56,13 @@ class SalusSP600Switch(SwitchEntity):
     @property
     def extra_state_attributes(self):
         """Return extra state attributes."""
-        return {"power": {"consumption": self._power}}
+        return {"power_consumption": self._power}
 
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         if self._on_off_cluster:
             try:
-                await self._on_off_cluster.command(0x0006, 0x01)  # On
+                await self._on_off_cluster.command(0x01)  # On
                 self._state = True
                 self.async_write_ha_state()
                 _LOGGER.debug("Salus SP600 %s turned on", self._attr_unique_id)
@@ -90,7 +91,7 @@ class SalusSP600Switch(SwitchEntity):
                     result = await self._metering_cluster.read_attributes(["current_summation_delivered"])
                     self._power = result.get("current_summation_delivered", 0) / 1000  # kWh
                 self.async_write_ha_state()
-                _LOGGER.debug("Successfully Updated Salus SP600 %s: state=%s, power=%s", self._attr_unique_id, self._state, self._power)
+                _LOGGER.debug("Updated Salus SP600 %s: state=%s, power=%s", self._attr_unique_id, self._state, self._power)
             except Exception as err:
                 _LOGGER.error("Failed to update Salus SP600 state: %s", err)
                 self._state = None
