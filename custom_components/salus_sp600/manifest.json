@@ -1,11 +1,11 @@
 {
-    "domain": "salus_sp600",
-    "name": "Salus SP600 Smart Plug",
-    "documentation": "https://github.com/yinchak/sp600",
-    "dependencies": [],
-    "codeowners": ["yinchak"],
-    "requirements": ["zigpy-znp>=0.14.0"],
-    "version": "0.1.0",
-    "iot_class": "local_polling",
-    "config_flow": true
+  "domain": "salus_sp600",
+  "name": "Salus SP600 Smart Plug",
+  "documentation": "https://github.com/yinchak/sp600/",
+  "dependencies": [],
+  "codeowners": ["@yinchak"],
+  "requirements": [],
+  "version": "1.0.0",
+  "iot_class": "local_polling",
+  "config_flow": true
 }
