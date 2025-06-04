@@ -1,5 +1,6 @@
 """Salus SP600 Smart Plug integration for Home Assistant."""
 import logging
+import importlib
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.zha import DOMAIN as ZHA_DOMAIN
@@ -19,6 +20,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if not hass.data.get(ZHA_DOMAIN):
         _LOGGER.error("ZHA integration is not configured")
         return False
+
+    # Preload switch platform to avoid blocking import_module
+    try:
+        importlib.import_module("custom_components.salus_sp600.switch")
+        _LOGGER.debug("Preloaded salus_sp600.switch module")
+    except ImportError as err:
+        _LOGGER.error("Failed to preload salus_sp600.switch: %s", err)
+        return False
+
     hass.data.setdefault("salus_sp600", {})
     hass.data["salus_sp600"][entry.entry_id] = {"zigbee_port": entry.data.get("zigbee_port")}
     await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
