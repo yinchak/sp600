@@ -2,7 +2,7 @@
   "name": "Salus SP600 Smart Plug",
   "content_in_root": false,
   "filename": null,
-  "homeassistant": "2023.6.0",
+  "homeassistant": "2023.12.0",
   "render_readme": true,
   "zip_release": false,
   "hacs": "1.34.0"
