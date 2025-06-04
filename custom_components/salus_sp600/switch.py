@@ -1,4 +1,4 @@
-"""Salus SP600 嘅開關平台."""
+"""Switch platform for Salus SP600 Smart Plug."""
 import logging
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -9,23 +9,23 @@ from homeassistant.components.zha.core.const import CLUSTER_HANDLER_ON_OFF, CLUS
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    """設置開關平台."""
-    _LOGGER.debug("設置 Salus SP600 開關平台")
+    """Set up the switch platform."""
+    _LOGGER.debug("Setting up Salus SP600 switch platform")
     zha_devices = hass.data.get("zha", {}).get("devices", {})
     entities = []
     for device in zha_devices.values():
         if CLUSTER_HANDLER_ON_OFF in device.cluster_handlers:
             entities.append(SalusSP600Switch(device))
     async_add_entities(entities)
-    _LOGGER.info(f"發現 {len(entities)} 個 Salus SP600 設備")
+    _LOGGER.info("Found %d Salus SP600 devices", len(entities))
 
 class SalusSP600Switch(SwitchEntity):
-    """Salus SP600 開關實體."""
+    """Salus SP600 switch entity."""
 
     def __init__(self, zha_device: ZHADevice):
         self._zha_device = zha_device
-        self._attr_name = f"Salus SP600 Switch {zha_device.ieee[-4:]}"
-        self._attr_unique_id = f"salus_sp600_switch_{zha_device.ieee}"
+        self._attr_name = f"Salus SP600 {zha_device.ieee[-4:]}"
+        self._attr_unique_id = f"salus_sp600_{zha_device.ieee}"
         self._state = False
         self._power = None
         self._on_off_handler = zha_device.cluster_handlers.get(CLUSTER_HANDLER_ON_OFF)
@@ -42,22 +42,22 @@ class SalusSP600Switch(SwitchEntity):
     async def async_turn_on(self, **kwargs):
         if self._on_off_handler:
             try:
-                await self._on_off_handler.cluster.command(0x01)  # 開啟
+                await self._on_off_handler.cluster.command(0x01)  # On
                 self._state = True
                 self.async_write_ha_state()
-                _LOGGER.debug(f"Salus SP600 {self._attr_unique_id} 已開啟")
+                _LOGGER.debug("Salus SP600 %s turned on", self._attr_unique_id)
             except Exception as err:
-                _LOGGER.error(f"開啟 Salus SP600 失敗：{err}")
+                _LOGGER.error("Failed to turn on Salus SP600: %s", err)
 
     async def async_turn_off(self, **kwargs):
         if self._on_off_handler:
             try:
-                await self._on_off_handler.cluster.command(0x00)  # 關閉
+                await self._on_off_handler.cluster.command(0x00)  # Off
                 self._state = False
                 self.async_write_ha_state()
-                _LOGGER.debug(f"Salus SP600 {self._attr_unique_id} 已關閉")
+                _LOGGER.debug("Salus SP600 %s turned off", self._attr_unique_id)
             except Exception as err:
-                _LOGGER.error(f"關閉 Salus SP600 失敗：{err}")
+                _LOGGER.error("Failed to turn off Salus SP600: %s", err)
 
     async def async_update(self):
         if self._on_off_handler:
@@ -69,8 +69,8 @@ class SalusSP600Switch(SwitchEntity):
                     result = await self._metering_handler.cluster.read_attributes(["current_summation_delivered"])
                     self._power = result[0].get("current_summation_delivered", 0) / 1000  # kWh
                 self.async_write_ha_state()
-                _LOGGER.debug(f"更新 Salus SP600 {self._attr_unique_id} 狀態：{self._state}, 耗電量：{self._power}")
+                _LOGGER.debug("Updated Salus SP600 %s state: %s, power: %s", self._attr_unique_id, self._state, self._power)
             except Exception as err:
-                _LOGGER.error(f"更新 Salus SP600 狀態失敗：{err}")
+                _LOGGER.error("Failed to update Salus SP600 state: %s", err)
                 self._state = None
                 self._power = None
