@@ -1,9 +1,8 @@
 """Salus SP600 Smart Plug integration for Home Assistant."""
 import logging
-import importlib
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.components.zha import DOMAIN as ZHA_DOMAIN
+from .zigbee import SP600ZigbeeCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,27 +16,22 @@ async def async_setup(hass: HomeAssistant, config: dict):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up Salus SP600 from a config entry."""
     _LOGGER.debug("Setting up Salus SP600 with port: %s", entry.data.get("zigbee_port"))
-    if not hass.data.get(ZHA_DOMAIN):
-        _LOGGER.error("ZHA integration is not configured")
-        return False
-
-    # Preload switch platform to avoid blocking import_module
-    try:
-        importlib.import_module("custom_components.salus_sp600.switch")
-        _LOGGER.debug("Preloaded salus_sp600.switch module")
-    except ImportError as err:
-        _LOGGER.error("Failed to preload salus_sp600.switch: %s", err)
-        return False
-
+    coordinator = SP600ZigbeeCoordinator(hass, entry.data["zigbee_port"])
     hass.data.setdefault("salus_sp600", {})
-    hass.data["salus_sp600"][entry.entry_id] = {"zigbee_port": entry.data.get("zigbee_port")}
-    await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
-    _LOGGER.info("Salus SP600 setup completed for port: %s", entry.data.get("zigbee_port"))
-    return True
+    hass.data["salus_sp600"][entry.entry_id] = coordinator
+    try:
+        await coordinator.start()
+        await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
+        _LOGGER.info("Salus SP600 setup completed for port: %s", entry.data["zigbee_port"])
+        return True
+    except Exception as err:
+        _LOGGER.error("Failed to setup Salus SP600: %s", err)
+        return False
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     _LOGGER.debug("Unloading Salus SP600 entry: %s", entry.entry_id)
+    coordinator = hass.data["salus_sp600"].pop(entry.entry_id)
+    await coordinator.shutdown()
     await hass.config_entries.async_unload_platforms(entry, ["switch"])
-    hass.data["salus_sp600"].pop(entry.entry_id)
     return True
