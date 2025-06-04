@@ -17,7 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         if CLUSTER_HANDLER_ON_OFF in device.cluster_handlers:
             entities.append(SalusSP600Switch(device))
     async_add_entities(entities)
-    _LOGGER.info("Found %d Salus SP600 devices", len(entities))
+    _LOGGER.info("Discovered %d Salus SP600 devices", len(entities))
 
 class SalusSP600Switch(SwitchEntity):
     """Salus SP600 switch entity."""
@@ -25,7 +25,7 @@ class SalusSP600Switch(SwitchEntity):
     def __init__(self, zha_device: ZHADevice):
         self._zha_device = zha_device
         self._attr_name = f"Salus SP600 {zha_device.ieee[-4:]}"
-        self._attr_unique_id = f"salus_sp600_{zha_device.ieee}"
+        self._attr_unique_id = f"salus_sp600_switch_{zha_device.ieee}"
         self._state = False
         self._power = None
         self._on_off_handler = zha_device.cluster_handlers.get(CLUSTER_HANDLER_ON_OFF)
@@ -69,7 +69,7 @@ class SalusSP600Switch(SwitchEntity):
                     result = await self._metering_handler.cluster.read_attributes(["current_summation_delivered"])
                     self._power = result[0].get("current_summation_delivered", 0) / 1000  # kWh
                 self.async_write_ha_state()
-                _LOGGER.debug("Updated Salus SP600 %s state: %s, power: %s", self._attr_unique_id, self._state, self._power)
+                _LOGGER.debug("Updated Salus SP600 %s: state=%s, power=%s", self._attr_unique_id, self._state, self._power)
             except Exception as err:
                 _LOGGER.error("Failed to update Salus SP600 state: %s", err)
                 self._state = None
