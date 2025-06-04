@@ -2,7 +2,7 @@
     "domain": "salus_sp600",
     "name": "Salus SP600 Smart Plug",
     "documentation": "https://github.com/yinchak/sp600",
-    "dependencies": ["zha"],
+    "dependencies": [],
     "codeowners": ["yinchak"],
     "requirements": ["zigpy-znp>=0.14.0"],
     "version": "0.1.0",
