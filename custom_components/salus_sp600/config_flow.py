@@ -18,10 +18,18 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
         _LOGGER.debug("Initiating Salus SP600 config flow")
         errors = {}
 
-        # Ensure ZHA is configured
+        # Check if ZHA is configured
         if not self.hass.data.get(ZHA_DOMAIN):
             _LOGGER.error("ZHA integration is not configured")
-            errors["base"] = "ZHA integration is not configured. Please set up ZHA first."
+            errors["base"] = "ZHA integration is not configured. Please set up ZHA with the SONOFF Zigbee 3.0 USB Dongle first."
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema({}),
+                errors=errors,
+                description_placeholders={
+                    "zha_tip": "Go to Settings > Devices & Services > Add Integration > ZHA, and configure /dev/ttyACM0"
+                }
+            )
 
         if user_input is not None:
             zigbee_port = user_input["zigbee_port"]
@@ -52,6 +60,6 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             errors=errors,
             description_placeholders={
                 "example_ports": "e.g., /dev/ttyACM0, /dev/ttyUSB0, or COM3",
-                "zha_tip": "Ensure ZHA is configured with the correct Zigbee stick"
+                "zha_tip": "Ensure ZHA is configured with the SONOFF Zigbee 3.0 USB Dongle"
             }
         )
