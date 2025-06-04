@@ -1,4 +1,4 @@
-"""Salus SP600 整合嘅設定流程."""
+"""Config flow for Salus SP600 Smart Plug integration."""
 import logging
 import voluptuous as vol
 from homeassistant import config_entries
@@ -8,42 +8,42 @@ from homeassistant.components.zha import DOMAIN as ZHA_DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
-    """處理 Salus SP600 設定流程."""
+    """Handle a config flow for Salus SP600."""
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def async_step_user(self, user_input=None):
-        """處理初始設定步驟."""
-        _LOGGER.debug("開始 Salus SP600 UI 設定流程")
+        """Handle the initial step."""
+        _LOGGER.debug("Starting Salus SP600 config flow")
         errors = {}
 
-        # 檢查 ZHA 是否已設置
+        # Check if ZHA is configured
         if not self.hass.data.get(ZHA_DOMAIN):
-            _LOGGER.error("ZHA 整合未設置，請先設置 ZHA")
-            errors["base"] = "ZHA 整合未設置，請先設置 ZHA 並連繫 /dev/ttyACM0"
+            _LOGGER.error("ZHA integration not configured")
+            errors["base"] = "ZHA integration not configured. Please set up ZHA first."
 
         if user_input is not None:
             zigbee_port = user_input["zigbee_port"]
-            _LOGGER.debug(f"用戶輸入 Zigbee 端口：{zigbee_port}")
+            _LOGGER.debug("User input Zigbee port: %s", zigbee_port)
             try:
-                # 驗證端口格式
+                # Validate port format
                 if not zigbee_port.startswith(("/dev/", "COM")):
-                    raise ValueError("端口格式無效，應為 /dev/ttyACM0 或 COM3")
-                # 儲存配置，依賴 ZHA
+                    raise ValueError("Invalid port format. Use /dev/ttyACM0 or COM3")
+                # Store configuration
                 return self.async_create_entry(
-                    title=f"Salus SP600 (Zigbee {zigbee_port})",
+                    title=f"Salus SP600 ({zigbee_port})",
                     data={"zigbee_port": zigbee_port}
                 )
             except ValueError as err:
-                _LOGGER.error(f"端口格式錯誤：{err}")
+                _LOGGER.error("Invalid port format: %s", err)
                 errors["base"] = str(err)
             except Exception as err:
-                _LOGGER.error(f"設定失敗：{err}")
-                errors["base"] = f"設定失敗：{err}"
+                _LOGGER.error("Configuration failed: %s", err)
+                errors["base"] = f"Configuration failed: {err}"
 
-        # 顯示輸入表單
-        _LOGGER.debug("顯示 Salus SP600 輸入表單")
+        # Show input form
+        _LOGGER.debug("Showing Salus SP600 input form")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
@@ -51,7 +51,7 @@ class SalusSP600ConfigFlow(config_entries.ConfigFlow, domain="salus_sp600"):
             }),
             errors=errors,
             description_placeholders={
-                "example_ports": "例如：/dev/ttyACM0, /dev/ttyUSB0, 或 COM3",
-                "zha_tip": "請確保 ZHA 整合已設置並連繫到正確嘅 Zigbee 棒"
+                "example_ports": "e.g., /dev/ttyACM0, /dev/ttyUSB0, or COM3",
+                "zha_tip": "Ensure ZHA is set up with the correct Zigbee stick"
             }
         )
