@@ -36,12 +36,11 @@ class SalusSP600Switch(SwitchEntity):
         self._attr_name = f"Salus SP600 {zha_device.ieee[-4:]}"
         self._attr_unique_id = f"salus_sp600_switch_{zha_device.ieee}"
         self._attr_device_info = zha_device.device_info
-        self._state = False
+        self._state = None
         self._power = None
+        # Find OnOff and Metering clusters
         self._on_off_cluster = None
         self._metering_cluster = None
-
-        # Find OnOff and Metering clusters
         for endpoint in zha_device.device.cluster_by_endpoint.values():
             if 0x0006 in endpoint.in_clusters:  # OnOff
                 self._on_off_cluster = endpoint.in_clusters[0x0006]
@@ -56,13 +55,13 @@ class SalusSP600Switch(SwitchEntity):
     @property
     def extra_state_attributes(self):
         """Return extra state attributes."""
-        return {"power_consumption": self._power}
+        return {"power": {"consumption": self._power}}
 
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         if self._on_off_cluster:
             try:
-                await self._on_off_cluster.command(0x01)  # On
+                await self._on_off_cluster.command(0x0006, 0x01)  # On
                 self._state = True
                 self.async_write_ha_state()
                 _LOGGER.debug("Salus SP600 %s turned on", self._attr_unique_id)
@@ -91,7 +90,7 @@ class SalusSP600Switch(SwitchEntity):
                     result = await self._metering_cluster.read_attributes(["current_summation_delivered"])
                     self._power = result.get("current_summation_delivered", 0) / 1000  # kWh
                 self.async_write_ha_state()
-                _LOGGER.debug("Updated Salus SP600 %s: state=%s, power=%s", self._attr_unique_id, self._state, self._power)
+                _LOGGER.debug("Successfully Updated Salus SP600 %s: state=%s, power=%s", self._attr_unique_id, self._state, self._power)
             except Exception as err:
                 _LOGGER.error("Failed to update Salus SP600 state: %s", err)
                 self._state = None
